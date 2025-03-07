@@ -1,0 +1,42 @@
+# 1
+python3 project.py import data
+
+# 2
+python3 project.py insertViewer 11 test@uci.edu awong "1111 1st street" Irvine CA 92616 "Romance;comedy" 2020-04-19 Alice Wong yearly
+
+# 3
+python3 project.py addGenre 1 Comedy
+python3 project.py addGenre 1 News
+
+#4
+python3 project.py deleteViewer 1
+python3 project.py deleteViewer 13
+
+#5
+python3 project.py insertMovie 1 top-gun.com
+python3 project.py insertMovie 5 top-gun.com
+
+#6
+python3 project.py insertSession 1 2 102 4 "2025-01-10 13:10:10" "2025-01-10 15:02:45" 720p mobile
+python3 project.py insertSession 8 2 102 4 "2025-01-10 13:10:10" "2025-01-10 15:02:45" 720p mobile
+python3 project.py insertSession 8 3 102 4 "2025-01-10 13:10:10" "2025-01-10 15:02:45" 720p mobile
+python3 project.py insertSession 8 3 6 12 "2025-01-10 13:10:10" "2025-01-10 15:02:45" 720p mobile
+
+#7
+python3 project.py updateRelease 6 "The Office"
+
+#8
+python3 project.py listReleases 1
+python3 project.py listReleases 3
+python3 project.py listReleases 7
+
+#9
+python3 project.py popularRelease 10
+
+#10
+python3 project.py releaseTitle 3
+
+#11
+python3 project.py activeViewer 1 2023-01-09 2026-03-10
+
+#12
