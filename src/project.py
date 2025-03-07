@@ -2,16 +2,24 @@ import mysql.connector
 import sys
 import load
 
-# Open connection
-conn = mysql.connector.connect(user='test', password='password', database='cs122a')
-cur = conn.cursor()
+def: execute(func()):
+    # Open connection
+    conn = mysql.connector.connect(user='test', password='password', database='cs122a')
+    cur = conn.cursor()
+
+    func(cur)
+
+    # Clean up connection
+    cur.close()
+    conn.close()
+
 
 # Arg processing
 command, *args = sys.argv[1:]
 
 match command:
     case 'import':
-        load.exec(cur)
+        execute(load.exec)
         print('import')
     case 'insertViewer':
         print('insertViewer')
@@ -38,6 +46,3 @@ match command:
     case _:
         print("Error, unrecognized command")
 
-# Clean up connection
-cur.close()
-conn.close()
