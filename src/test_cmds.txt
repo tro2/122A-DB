@@ -1,5 +1,5 @@
 # 1
-python3 project.py import data
+python3 project.py import test_data
 
 # 2
 python3 project.py insertViewer 11 test@uci.edu awong "1111 1st street" Irvine CA 92616 "Romance;comedy" 2020-04-19 Alice Wong yearly

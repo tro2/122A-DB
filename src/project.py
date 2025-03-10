@@ -172,8 +172,16 @@ def activeViewer(conn, cursor):
     except: return False
 
 # 12) videos viewed
+# WIP, currently errors out and unsure why
 def videosViewed(conn, cursor):
-    pass
+    rid = sys.argv[2]
+
+    # Given a Video rid, count the number of unique viewers that have started a session on it. Videos that are not streamed by any viewer should have a count of 0 instead of NULL. Return video information along with the count in DESCENDING order by rid.
+    try:
+        cursor.execute(f"SELECT v.rid, v.ep_num, v.title, v.length, COUNT(DISTINCT s.uid) as numViewers FROM videos v LEFT JOIN sessions s ON v.rid = s.rid AND v.ep_num = s.ep_num WHERE v.rid = {rid} GROUP BY v.rid, v.ep_num, v.title, v.length ORDER BY v.rid DESC")
+        return (cursor.column_names, cursor.fetchall())
+    
+    except: return False
 
 # main handler
 def main():
