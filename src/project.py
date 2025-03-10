@@ -200,7 +200,8 @@ def main():
         case "popularRelease": ret = popularRelease(conn, cursor)
         case "releaseTitle": ret = releaseTitle(conn, cursor)
         case "activeViewer": ret = activeViewer(conn, cursor)
-        case "videosVideos": ret = videosViewed(conn, cursor)
+        case "videosViewed": ret = videosViewed(conn, cursor)
+        case _: print("Unknown Command"); ret = False
 
     if isinstance(ret, bool):
         if ret: print("Success")
