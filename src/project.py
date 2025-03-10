@@ -12,7 +12,6 @@ def import_data(conn, cursor):
         for table in names[::-1]:
             cursor.execute(f"DROP TABLE IF EXISTS {table}")
 
-        # create tables
         cursor.execute("CREATE TABLE users (uid INT, email TEXT NOT NULL, joined_date DATE NOT NULL, nickname TEXT NOT NULL, street TEXT, city TEXT, state TEXT, zip TEXT, genres TEXT, PRIMARY KEY(uid));")
         cursor.execute("CREATE TABLE producers (uid INT, bio TEXT, company TEXT, PRIMARY KEY (uid), FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE);")
         cursor.execute("CREATE TABLE viewers (uid INT, subscription ENUM('free', 'monthly', 'yearly'), first_name TEXT NOT NULL, last_name TEXT NOT NULL, PRIMARY KEY (uid), FOREIGN KEY(uid) REFERENCES users(uid) ON DELETE CASCADE);")
@@ -23,12 +22,10 @@ def import_data(conn, cursor):
         cursor.execute("CREATE TABLE sessions(sid INT, uid INT NOT NULL, rid INT NOT NULL, ep_num INT NOT NULL, initiate_at DATETIME NOT NULL, leave_at DATETIME NOT NULL, quality ENUM('480p', '720p', '1080p'), device ENUM('mobile', 'desktop'), PRIMARY KEY (sid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid, ep_num) REFERENCES videos(rid, ep_num) ON DELETE CASCADE);")
         cursor.execute("CREATE TABLE reviews(rvid INT, uid INT NOT NULL, rid INT NOT NULL, rating DECIMAL(2, 1) NOT NULL CHECK (rating BETWEEN 0 AND 5), body TEXT, posted_at DATETIME NOT NULL, PRIMARY KEY (rvid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
 
-        # load data
         for table in names:
             file_path = f"{folder_name}/{table}.csv"
             cursor.execute(f"LOAD DATA LOCAL INFILE '{file_path}' into table {table} FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' IGNORE 1 ROWS;")
 
-        # commit
         conn.commit()
         return True
     
@@ -36,7 +33,6 @@ def import_data(conn, cursor):
 
 # 2) insert viewer
 def insertViewer(conn, cursor):
-    # parse args
     uid = sys.argv[2]
     email = sys.argv[3]
     nickname = sys.argv[4]
@@ -50,12 +46,10 @@ def insertViewer(conn, cursor):
     last = sys.argv[12]
     sub = sys.argv[13]
     
-    # insert into users, then viewers
     try:
         cursor.execute(f"INSERT INTO users (uid,email,joined_date,nickname,street,city,state,zip,genres) VALUES ({uid}, '{email}', '{joined}', '{nickname}', '{street}', '{city}', '{state}', {zipc}, '{genres}');")
         cursor.execute(f"INSERT INTO viewers (uid,subscription,first_name,last_name) VALUES ({uid}, '{sub}', '{first}', '{last}');")
 
-        # commit
         conn.commit()
         return True
 
@@ -63,7 +57,6 @@ def insertViewer(conn, cursor):
 
 # 3) insert genre
 def insertGenre(conn, cursor):
-    # parse args
     uid = sys.argv[2]
     genre = sys.argv[3]
 
@@ -75,7 +68,6 @@ def insertGenre(conn, cursor):
 
         cursor.execute(f"UPDATE users SET genres = '{prev}' WHERE uid = {uid}")
         
-        # commit
         conn.commit()
         return True
 
@@ -83,10 +75,9 @@ def insertGenre(conn, cursor):
 
 # 4) delete viewer
 def deleteViewer(conn, cursor):
-    # parse arg
     uid = sys.argv[2]
 
-    # delete from viewers, will cascade
+    # deleting from viewers will cascade
     try:
         cursor.execute(f"DELETE FROM viewers WHERE uid = {uid}")
         conn.commit()
@@ -96,7 +87,6 @@ def deleteViewer(conn, cursor):
 
 # 5) insert movie
 def insertMovie(conn, cursor):
-    # parse args
     rid = sys.argv[2]
     web = sys.argv[3]
 
@@ -110,7 +100,6 @@ def insertMovie(conn, cursor):
 
 # 6) insert session
 def insertSession(conn, cursor):
-    # parse args
     sid = sys.argv[2]
     uid = sys.argv[3]
     rid = sys.argv[4]
@@ -120,7 +109,6 @@ def insertSession(conn, cursor):
     quality = sys.argv[8]
     device = sys.argv[9]
 
-    # insert into sessions
     try:
         cursor.execute(f"INSERT INTO sessions (sid,uid,rid,ep_num,initiate_at,leave_at,quality,device) VALUES ({sid}, {uid}, {rid}, {ep_num}, '{init}', '{leave}', '{quality}', '{device}')")
         conn.commit()
@@ -130,11 +118,9 @@ def insertSession(conn, cursor):
 
 # 7) update release
 def updateRelease(conn, cursor):
-    # parse args
     rid = sys.argv[2]
     title = sys.argv[3]
 
-    # update releases
     try:
         cursor.execute(f"UPDATE releases SET title = '{title}' WHERE rid = {rid}")
         conn.commit()
@@ -144,46 +130,31 @@ def updateRelease(conn, cursor):
 
 # 8) list releases
 def listReleases(conn, cursor):
-    # parse arg
     uid = sys.argv[2]
 
-    # perform query, format results
     try:
         cursor.execute(f"SELECT DISTINCT rl.rid, rl.genre, rl.title FROM Reviews rv JOIN Releases rl ON rv.rid = rl.rid WHERE rv.uid = {uid} ORDER BY rl.title ASC")
-        rows = cursor.fetchall()
-        print("[rid, genre, title]")
-        for row in rows: print(f"{row[0]}, {row[1]}, {row[2]}")
-        return True
+        return (cursor.column_names, cursor.fetchall())
 
     except: return False
 
 # 9) popular release
 def popularRelease(conn, cursor):
-    # parse arg
     num = sys.argv[2]
-
-    # perform query
+    
     try:
         cursor.execute(f"SELECT rl.rid, rl.title, COUNT(*) as reviewCount FROM reviews rv JOIN releases rl ON rv.rid = rl.rid GROUP BY rl.rid ORDER BY reviewCount DESC LIMIT {num}")
-        rows = cursor.fetchall()
-        print("[rid, title, reviewCount]")
-        for row in rows: print(f"{row[0]}, {row[1]}, {row[2]}")
-        return True
+        return (cursor.column_names, cursor.fetchall())
     
     except: return False
 
 # 10) title of release
 def releaseTitle(conn, cursor):
-    # parse arg
     sid = sys.argv[2]
-
-    # perform query
+    
     try:
         cursor.execute(f"SELECT r.rid, r.title, r.genre, v.title, v.ep_num, v.length FROM (sessions s JOIN videos v ON s.rid = v.rid AND s.ep_num = v.ep_num) JOIN releases r ON r.rid = v.rid WHERE s.sid = {sid} ORDER BY r.title ASC")
-        rows = cursor.fetchall()
-        print("[rid, releaseTitle, genre, videoTitle, ep_num, length]")
-        for row in rows: print(f"{row[0]}, {row[1]}, {row[2]}, {row[3]}, {row[4]}, {row[5]}")
-        return True
+        return (cursor.column_names, cursor.fetchall())
 
     except: return False
 
@@ -193,14 +164,10 @@ def activeViewer(conn, cursor):
     num = sys.argv[2]
     start = sys.argv[3]
     end = sys.argv[4]
-
-    # perform query
+    
     try:
         cursor.execute(f"SELECT v.uid, v.first_name, v.last_name FROM viewers v JOIN (SELECT uid, COUNT(*) as numSessions FROM sessions WHERE STR_TO_DATE('{start}', '%Y-%m-%d %H:%i%s') < initiate_at AND initiate_at < STR_TO_DATE('{end}', '%Y-%m-%d %H:%i%s') GROUP BY uid) AS n ON v.uid = n.uid WHERE n.numSessions >= {num}")
-        rows = cursor.fetchall()
-        print("[uid, first_name, last_name]")
-        for row in rows: print(f"{row[0]}, {row[1]}, {row[2]}")
-        return True
+        return (cursor.column_names, cursor.fetchall())
 
     except: return False
 
@@ -208,13 +175,9 @@ def activeViewer(conn, cursor):
 def videosViewed(conn, cursor):
     pass
 
-# connect to db
-def connect():
-    return mysql.connector.connect(user="test", password="password", database="cs122a", allow_local_infile=True)
-
 # main handler
 def main():
-    conn = connect()
+    conn = mysql.connector.connect(user="test", password="password", database="cs122a", allow_local_infile=True)
     cursor = conn.cursor()
     
     match sys.argv[1]:
@@ -231,10 +194,17 @@ def main():
         case "activeViewer": ret = activeViewer(conn, cursor)
         case "videosVideos": ret = videosViewed(conn, cursor)
 
-    print(ret)
+    if isinstance(ret, bool):
+        if ret: print("Success")
+        else: print("Fail")
+    else:
+        names, rows = ret
+        rows.insert(0, names)
+        for row in rows: print(", ".join(map(str, row)))
 
     cursor.close()
     conn.close()
 
+# calls main function when script is run
 if __name__ == "__main__":
     main()
