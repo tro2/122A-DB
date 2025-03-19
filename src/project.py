@@ -69,18 +69,28 @@ def insertGenre(conn, cursor):
     uid = sys.argv[2]
     genre = sys.argv[3]
 
-    # get existing genres and add genre if not already there
     try:
         cursor.execute(f"SELECT genres FROM users WHERE uid = {uid}")
-        prev = cursor.fetchone()[0]
-        if genre not in prev: prev += f";{genre}"
+        result = cursor.fetchone()
+
+        if result is None:
+            return False
+
+        prev = result[0]
+
+        if prev is None or prev == "":
+            prev = genre
+        elif genre in prev:  # If the genre is already in the list, return False
+            return False
+        elif genre not in prev:
+            prev += f";{genre}"
 
         cursor.execute(f"UPDATE users SET genres = '{prev}' WHERE uid = {uid}")
-        
         conn.commit()
+
         return True
 
-    except: return False
+    except : return False
 
 # 4) delete viewer
 def deleteViewer(conn, cursor):
