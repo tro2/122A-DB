@@ -155,10 +155,7 @@ def listReleases(conn, cursor):
         cursor.execute(f"SELECT DISTINCT rl.rid, rl.genre, rl.title FROM reviews rv JOIN releases rl ON rv.rid = rl.rid WHERE rv.uid = {uid} ORDER BY rl.title ASC")
         return (cursor.column_names, cursor.fetchall())
     
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
-
+    except: return False
 
 
 # 9) popular release
@@ -231,8 +228,8 @@ def main():
         else: print("Fail")
     else:
         names, rows = ret
-        rows.insert(0, names)
-        for row in rows: print(", ".join(map(str, row)))
+        for idx, row in enumerate(rows):
+            print(",".join(map(str, row)), end="" if idx == len(rows) - 1 else "\n")
 
     cursor.close()
     conn.close()
