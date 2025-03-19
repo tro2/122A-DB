@@ -4,11 +4,6 @@ import os
 import csv
 
 # 1) import data
-import mysql.connector
- import sys
- import os
- 
- # 1) import data
 def import_data(conn, cursor):
     names = ["users", "producers", "viewers", "releases", "movies", "series", "videos", "sessions", "reviews"]
     folder_name = sys.argv[2]
