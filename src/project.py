@@ -28,9 +28,9 @@ def import_data(conn, cursor):
             file_path = f"{folder_name}/{table}.csv"
             with open(file_path, 'r') as csvfile:
                 reader = csv.reader(csvfile)
-                next(reader)  # skip the header row
+                next(reader)  # Skip the header row
                 for row in reader:
-                    # format the SQL query based on the number of columns in each table
+                    # Format the SQL query based on the number of columns in each table
                     placeholders = ', '.join(['%s'] * len(row))
                     query = f"INSERT INTO {table} VALUES ({placeholders})"
                     cursor.execute(query, row)
@@ -150,14 +150,15 @@ def updateRelease(conn, cursor):
 # 8) list releases
 def listReleases(conn, cursor):
     uid = sys.argv[2]
-
+    
     try:
-        cursor.execute(f"SELECT DISTINCT rl.rid, rl.genre, rl.title FROM Reviews rv JOIN Releases rl ON rv.rid = rl.rid WHERE rv.uid = {uid} ORDER BY rl.title ASC")
-        conn.commit()
+        cursor.execute(f"SELECT DISTINCT rl.rid, rl.genre, rl.title FROM reviews rv JOIN releases rl ON rv.rid = rl.rid WHERE rv.uid = {uid} ORDER BY rl.title ASC")
+        return (cursor.column_names, cursor.fetchall())
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
 
-        return True
-
-    except: return False
 
 
 # 9) popular release
