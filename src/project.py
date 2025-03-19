@@ -4,58 +4,38 @@ import os
 import csv
 
 # 1) import data
-def import_data(conn, cursor):
-    names = ["users", "producers", "viewers", "releases", "movies", "series", "videos", "sessions", "reviews"]
-    folder_name = sys.argv[2]
-
-    try:
-        for table in names[::-1]:
-            cursor.execute(f"DROP TABLE IF EXISTS {table}")
-
-        cursor.execute("CREATE TABLE users (uid INT, email TEXT NOT NULL, joined_date DATE NOT NULL, nickname TEXT NOT NULL, street TEXT, city TEXT, state TEXT, zip TEXT, genres TEXT, PRIMARY KEY(uid));")
-        cursor.execute("CREATE TABLE producers (uid INT, bio TEXT, company TEXT, PRIMARY KEY (uid), FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE);")
-        cursor.execute("CREATE TABLE viewers (uid INT, subscription ENUM('free', 'monthly', 'yearly'), first_name TEXT NOT NULL, last_name TEXT NOT NULL, PRIMARY KEY (uid), FOREIGN KEY(uid) REFERENCES users(uid) ON DELETE CASCADE);")
-        cursor.execute("CREATE TABLE releases (rid INT, producer_uid INT NOT NULL, title TEXT NOT NULL, genre TEXT NOT NULL, release_date DATE NOT NULL, PRIMARY KEY (rid), FOREIGN KEY (producer_uid) REFERENCES producers (uid) ON DELETE CASCADE);")
-        cursor.execute("CREATE TABLE movies(rid INT, website_url TEXT, PRIMARY KEY (rid), FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
-        cursor.execute("CREATE TABLE series(rid INT, introduction TEXT, PRIMARY KEY (rid), FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
-        cursor.execute("CREATE TABLE videos(rid INT, ep_num INT NOT NULL, title TEXT NOT NULL, length INT NOT NULL, PRIMARY KEY (rid, ep_num), FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
-        cursor.execute("CREATE TABLE sessions(sid INT, uid INT NOT NULL, rid INT NOT NULL, ep_num INT NOT NULL, initiate_at DATETIME NOT NULL, leave_at DATETIME NOT NULL, quality ENUM('480p', '720p', '1080p'), device ENUM('mobile', 'desktop'), PRIMARY KEY (sid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid, ep_num) REFERENCES videos(rid, ep_num) ON DELETE CASCADE);")
-        cursor.execute("CREATE TABLE reviews(rvid INT, uid INT NOT NULL, rid INT NOT NULL, rating DECIMAL(2, 1) NOT NULL CHECK (rating BETWEEN 0 AND 5), body TEXT, posted_at DATETIME NOT NULL, PRIMARY KEY (rvid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
-
-        for table in names:
-            file_path = f"{folder_name}/{table}.csv"
-            try:
-                with open(file_path, newline='', encoding='utf-8') as csvfile:
-                    reader = csv.reader(csvfile)
-                    next(reader)
-                    for row in reader:
-                        if table == "users":
-                            cursor.execute("INSERT INTO users (uid, email, joined_date, nickname, street, city, state, zip, genres) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
-                        elif table == "producers":
-                            cursor.execute("INSERT INTO producers (uid, bio, company) VALUES (?, ?, ?)", row)
-                        elif table == "viewers":
-                            cursor.execute("INSERT INTO viewers (uid, subscription, first_name, last_name) VALUES (?, ?, ?, ?)", row)
-                        elif table == "releases":
-                            cursor.execute("INSERT INTO releases (rid, producer_uid, title, genre, release_date) VALUES (?, ?, ?, ?, ?)", row)
-                        elif table == "movies":
-                            cursor.execute("INSERT INTO movies (rid, website_url) VALUES (?, ?)", row)
-                        elif table == "series":
-                            cursor.execute("INSERT INTO series (rid, introduction) VALUES (?, ?)", row)
-                        elif table == "videos":
-                            cursor.execute("INSERT INTO videos (rid, ep_num, title, length) VALUES (?, ?, ?, ?)", row)
-                        elif table == "sessions":
-                            cursor.execute("INSERT INTO sessions (sid, uid, rid, ep_num, initiate_at, leave_at, quality, device) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", row)
-                        elif table == "reviews":
-                            cursor.execute("INSERT INTO reviews (rvid, uid, rid, rating, body, posted_at) VALUES (?, ?, ?, ?, ?, ?)", row)
-
-            except Exception as e:
-                pass
-
-        conn.commit()
-        return True
-
-    except Exception as e:
-        return False
+import mysql.connector
+ import sys
+ import os
+ 
+ # 1) import data
+ def import_data(conn, cursor):
+     names = ["users", "producers", "viewers", "releases", "movies", "series", "videos", "sessions", "reviews"]
+     folder_name = sys.argv[2]
+ 
+     try:
+         # drop tables in reverse to avoid foreign key issues
+         for table in names[::-1]:
+             cursor.execute(f"DROP TABLE IF EXISTS {table}")
+ 
+         cursor.execute("CREATE TABLE users (uid INT, email TEXT NOT NULL, joined_date DATE NOT NULL, nickname TEXT NOT NULL, street TEXT, city TEXT, state TEXT, zip TEXT, genres TEXT, PRIMARY KEY(uid));")
+         cursor.execute("CREATE TABLE producers (uid INT, bio TEXT, company TEXT, PRIMARY KEY (uid), FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE);")
+         cursor.execute("CREATE TABLE viewers (uid INT, subscription ENUM('free', 'monthly', 'yearly'), first_name TEXT NOT NULL, last_name TEXT NOT NULL, PRIMARY KEY (uid), FOREIGN KEY(uid) REFERENCES users(uid) ON DELETE CASCADE);")
+         cursor.execute("CREATE TABLE releases (rid INT, producer_uid INT NOT NULL, title TEXT NOT NULL, genre TEXT NOT NULL, release_date DATE NOT NULL, PRIMARY KEY (rid), FOREIGN KEY (producer_uid) REFERENCES producers (uid) ON DELETE CASCADE);")
+         cursor.execute("CREATE TABLE movies(rid INT, website_url TEXT, PRIMARY KEY (rid), FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
+         cursor.execute("CREATE TABLE series(rid INT, introduction TEXT, PRIMARY KEY (rid), FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
+         cursor.execute("CREATE TABLE videos(rid INT, ep_num INT NOT NULL, title TEXT NOT NULL, length INT NOT NULL, PRIMARY KEY (rid, ep_num), FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
+         cursor.execute("CREATE TABLE sessions(sid INT, uid INT NOT NULL, rid INT NOT NULL, ep_num INT NOT NULL, initiate_at DATETIME NOT NULL, leave_at DATETIME NOT NULL, quality ENUM('480p', '720p', '1080p'), device ENUM('mobile', 'desktop'), PRIMARY KEY (sid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid, ep_num) REFERENCES videos(rid, ep_num) ON DELETE CASCADE);")
+         cursor.execute("CREATE TABLE reviews(rvid INT, uid INT NOT NULL, rid INT NOT NULL, rating DECIMAL(2, 1) NOT NULL CHECK (rating BETWEEN 0 AND 5), body TEXT, posted_at DATETIME NOT NULL, PRIMARY KEY (rvid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
+ 
+         for table in names:
+             file_path = f"{folder_name}/{table}.csv"
+             cursor.execute(f"LOAD DATA LOCAL INFILE '{file_path}' into table {table} FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' IGNORE 1 ROWS;")
+ 
+         conn.commit()
+         return True
+ 
+     except: return False
 
 # 2) insert viewer
 def insertViewer(conn, cursor):
