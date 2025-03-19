@@ -1,6 +1,7 @@
 import mysql.connector
 import sys
 import os
+import csv
 
 # 1) import data
 def import_data(conn, cursor):
@@ -8,7 +9,6 @@ def import_data(conn, cursor):
     folder_name = sys.argv[2]
 
     try:
-        # drop tables in reverse to avoid foreign key issues
         for table in names[::-1]:
             cursor.execute(f"DROP TABLE IF EXISTS {table}")
 
@@ -24,12 +24,38 @@ def import_data(conn, cursor):
 
         for table in names:
             file_path = f"{folder_name}/{table}.csv"
-            cursor.execute(f"LOAD DATA LOCAL INFILE '{file_path}' into table {table} FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' IGNORE 1 ROWS;")
+            try:
+                with open(file_path, newline='', encoding='utf-8') as csvfile:
+                    reader = csv.reader(csvfile)
+                    next(reader)
+                    for row in reader:
+                        if table == "users":
+                            cursor.execute("INSERT INTO users (uid, email, joined_date, nickname, street, city, state, zip, genres) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+                        elif table == "producers":
+                            cursor.execute("INSERT INTO producers (uid, bio, company) VALUES (?, ?, ?)", row)
+                        elif table == "viewers":
+                            cursor.execute("INSERT INTO viewers (uid, subscription, first_name, last_name) VALUES (?, ?, ?, ?)", row)
+                        elif table == "releases":
+                            cursor.execute("INSERT INTO releases (rid, producer_uid, title, genre, release_date) VALUES (?, ?, ?, ?, ?)", row)
+                        elif table == "movies":
+                            cursor.execute("INSERT INTO movies (rid, website_url) VALUES (?, ?)", row)
+                        elif table == "series":
+                            cursor.execute("INSERT INTO series (rid, introduction) VALUES (?, ?)", row)
+                        elif table == "videos":
+                            cursor.execute("INSERT INTO videos (rid, ep_num, title, length) VALUES (?, ?, ?, ?)", row)
+                        elif table == "sessions":
+                            cursor.execute("INSERT INTO sessions (sid, uid, rid, ep_num, initiate_at, leave_at, quality, device) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", row)
+                        elif table == "reviews":
+                            cursor.execute("INSERT INTO reviews (rvid, uid, rid, rating, body, posted_at) VALUES (?, ?, ?, ?, ?, ?)", row)
+
+            except Exception as e:
+                pass
 
         conn.commit()
         return True
-    
-    except: return False
+
+    except Exception as e:
+        return False
 
 # 2) insert viewer
 def insertViewer(conn, cursor):
