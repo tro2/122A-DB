@@ -23,14 +23,13 @@ def import_data(conn, cursor):
         cursor.execute("CREATE TABLE sessions(sid INT, uid INT NOT NULL, rid INT NOT NULL, ep_num INT NOT NULL, initiate_at DATETIME NOT NULL, leave_at DATETIME NOT NULL, quality ENUM('480p', '720p', '1080p'), device ENUM('mobile', 'desktop'), PRIMARY KEY (sid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid, ep_num) REFERENCES videos(rid, ep_num) ON DELETE CASCADE);")
         cursor.execute("CREATE TABLE reviews(rvid INT, uid INT NOT NULL, rid INT NOT NULL, rating DECIMAL(2, 1) NOT NULL CHECK (rating BETWEEN 0 AND 5), body TEXT, posted_at DATETIME NOT NULL, PRIMARY KEY (rvid), FOREIGN KEY (uid) REFERENCES viewers(uid) ON DELETE CASCADE, FOREIGN KEY (rid) REFERENCES releases(rid) ON DELETE CASCADE);")
 
-        # Manually inserting data from CSV files
+        # manually inserting data from CSV files
         for table in names:
             file_path = f"{folder_name}/{table}.csv"
             with open(file_path, 'r') as csvfile:
                 reader = csv.reader(csvfile)
-                next(reader)  # Skip the header row
+                next(reader)
                 for row in reader:
-                    # Format the SQL query based on the number of columns in each table
                     placeholders = ', '.join(['%s'] * len(row))
                     query = f"INSERT INTO {table} VALUES ({placeholders})"
                     cursor.execute(query, row)
@@ -80,7 +79,7 @@ def insertGenre(conn, cursor):
 
         if prev is None or prev == "":
             prev = genre
-        elif genre in prev:  # If the genre is already in the list, return False
+        elif genre in prev:  #if the genre is already in the list, return False
             return False
         elif genre not in prev:
             prev += f";{genre}"
@@ -186,17 +185,15 @@ def activeViewer(conn, cursor):
     end = sys.argv[4]
     
     try:
-        cursor.execute(f"SELECT v.uid, v.first_name, v.last_name FROM viewers v JOIN (SELECT uid, COUNT(*) as numSessions FROM sessions WHERE STR_TO_DATE('{start}', '%Y-%m-%d %H:%i%s') < initiate_at AND initiate_at < STR_TO_DATE('{end}', '%Y-%m-%d %H:%i%s') GROUP BY uid) AS n ON v.uid = n.uid WHERE n.numSessions >= {num}")
+        cursor.execute(f"SELECT v.uid, v.first_name, v.last_name FROM viewers v JOIN (SELECT uid, COUNT(*) as numSessions FROM sessions WHERE STR_TO_DATE('{start}', '%Y-%m-%d %H:%i:%s') < initiate_at AND initiate_at < STR_TO_DATE('{end}', '%Y-%m-%d %H:%i:%s') GROUP BY uid) AS n ON v.uid = n.uid WHERE n.numSessions >= {num}")
         return (cursor.column_names, cursor.fetchall())
 
     except: return False
 
 # 12) videos viewed
-# WIP, currently errors out and unsure why
 def videosViewed(conn, cursor):
     rid = sys.argv[2]
 
-    # Given a Video rid, count the number of unique viewers that have started a session on it. Videos that are not streamed by any viewer should have a count of 0 instead of NULL. Return video information along with the count in DESCENDING order by rid.
     try:
         cursor.execute(f"SELECT v.rid, v.ep_num, v.title, v.length, COUNT(DISTINCT s.uid) as numViewers FROM videos v LEFT JOIN sessions s ON v.rid = s.rid WHERE v.rid = {rid} GROUP BY v.rid, v.ep_num, v.title, v.length ORDER BY v.rid DESC")
         return (cursor.column_names, cursor.fetchall())
