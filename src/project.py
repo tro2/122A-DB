@@ -163,7 +163,7 @@ def popularRelease(conn, cursor):
     num = sys.argv[2]
     
     try:
-        cursor.execute(f"SELECT rl.rid, rl.title, COUNT(*) as reviewCount FROM reviews rv JOIN releases rl ON rv.rid = rl.rid GROUP BY rl.rid ORDER BY reviewCount DESC LIMIT {num}")
+        cursor.execute(f"SELECT rl.rid, rl.title, COUNT(*) as reviewCount FROM reviews rv JOIN releases rl ON rv.rid = rl.rid GROUP BY rl.rid ORDER BY reviewCount DESC, rl.rid DESC LIMIT {num}")
         return (cursor.column_names, cursor.fetchall())
     
     except: return False
@@ -198,7 +198,7 @@ def videosViewed(conn, cursor):
 
     # Given a Video rid, count the number of unique viewers that have started a session on it. Videos that are not streamed by any viewer should have a count of 0 instead of NULL. Return video information along with the count in DESCENDING order by rid.
     try:
-        cursor.execute(f"SELECT v.rid, v.ep_num, v.title, v.length, COUNT(DISTINCT s.uid) as numViewers FROM videos v LEFT JOIN sessions s ON v.rid = s.rid AND v.ep_num = s.ep_num WHERE v.rid = {rid} GROUP BY v.rid, v.ep_num, v.title, v.length ORDER BY v.rid DESC")
+        cursor.execute(f"SELECT v.rid, v.ep_num, v.title, v.length, COUNT(DISTINCT s.uid) as numViewers FROM videos v LEFT JOIN sessions s ON v.rid = s.rid WHERE v.rid = {rid} GROUP BY v.rid, v.ep_num, v.title, v.length ORDER BY v.rid DESC")
         return (cursor.column_names, cursor.fetchall())
     
     except: return False
